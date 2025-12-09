@@ -1,9 +1,13 @@
 pipeline {
     agent any
     
+    parameters {
+        string(name: 'APP_URL', defaultValue: 'http://localhost:5173', description: 'Learnify application URL')
+    }
+    
     environment {
         DOCKER_IMAGE = "learnify-selenium-tests:${BUILD_NUMBER}"
-        APP_URL = "http://localhost:5173"
+        APP_URL = "${params.APP_URL ?: 'http://localhost:5173'}"
         GITHUB_REPO = "https://github.com/muneebaslam157/learnify-test-automation.git"
     }
     
@@ -43,8 +47,11 @@ pipeline {
             steps {
                 echo "========== STAGE: Run Tests in Docker =========="
                 sh '''
+                    echo "Running tests with APP_URL: ${APP_URL}"
                     /usr/bin/docker run --rm \
+                        --network host \
                         -e APP_URL="${APP_URL}" \
+                        -e CHROME_BIN=/usr/bin/chromium \
                         ${DOCKER_IMAGE} || true
                     echo "✅ Tests execution completed"
                 '''
