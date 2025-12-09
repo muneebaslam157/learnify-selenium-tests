@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  selenium-tests:
+    build: .
+    image: learnify-selenium-tests:latest
+    container_name: learnify-selenium-tests
+    environment:
+      - APP_URL=http://host.docker.internal:5173
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./test_learnify_automation.py:/app/test_learnify_automation.py
+      - ./requirements.txt:/app/requirements.txt
+    depends_on:
+      - learnify-web
+    networks:
+      - learnify-network
+
+  learnify-web:
+    image: learnify-web:latest
+    container_name: learnify-web
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - learnify-network
+
+networks:
+  learnify-network:
+    driver: bridge
+
+volumes:
+  test-reports:
