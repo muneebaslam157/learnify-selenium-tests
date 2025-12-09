@@ -1,10 +1,8 @@
-# Use official Python runtime with Chrome support
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies and Chrome
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -18,22 +16,19 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome repository and install Chrome
-RUN curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - 2>/dev/null || true && \
-    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable --no-install-recommends && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install Chromium (simpler alternative to Google Chrome)
+RUN apt-get update && apt-get install -y chromium-browser --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python requirements
+# Copy Python requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir selenium>=4.15.0 webdriver-manager>=4.0.0
 
 # Copy test file
 COPY test_learnify_automation.py .
 
-# Set environment
+# Set environment variables
 ENV APP_URL=http://localhost:5173
+ENV CHROME_BIN=/usr/bin/chromium-browser
 
 # Run tests
 CMD ["python", "-m", "unittest", "test_learnify_automation", "-v"]
