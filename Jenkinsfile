@@ -29,8 +29,11 @@ pipeline {
                     echo "Current directory: $(pwd)"
                     echo "Files present:"
                     ls -la
+                    echo "Checking Docker availability..."
+                    which docker
+                    docker --version
                     echo "Building Docker image..."
-                    docker build -t ${DOCKER_IMAGE} .
+                    /usr/bin/docker build -t ${DOCKER_IMAGE} .
                     echo "✅ Docker image built: ${DOCKER_IMAGE}"
                 '''
             }
@@ -40,7 +43,7 @@ pipeline {
             steps {
                 echo "========== STAGE: Run Tests in Docker =========="
                 sh '''
-                    docker run --rm \
+                    /usr/bin/docker run --rm \
                         -e APP_URL="${APP_URL}" \
                         ${DOCKER_IMAGE} || true
                     echo "✅ Tests execution completed"
