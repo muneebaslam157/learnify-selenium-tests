@@ -43,49 +43,16 @@ pipeline {
             }
         }
         
-        stage('Setup App Infrastructure') {
-            steps {
-                echo "========== STAGE: Setup App Infrastructure =========="
-                sh '''
-                    echo "Cloning Learnify application..."
-                    rm -rf learnify-app || true
-                    git clone https://github.com/muneebaslam157/learnify-skillup.git learnify-app
-                    echo "✅ Learnify app cloned"
-                '''
-            }
-        }
-        
         stage('Run Tests in Docker') {
             steps {
                 echo "========== STAGE: Run Tests in Docker =========="
                 sh '''
-                    echo "Starting Learnify app on port 5173..."
-                    cd learnify-app
-                    npm install --silent
-                    npm run dev > /tmp/app.log 2>&1 &
-                    APP_PID=$!
-                    echo "App started with PID: $APP_PID"
-                    
-                    echo "Waiting for app to be ready..."
-                    for i in {1..30}; do
-                        if curl -s http://localhost:5173 > /dev/null; then
-                            echo "✅ App is ready!"
-                            break
-                        fi
-                        echo "Attempt $i: App not ready yet, waiting..."
-                        sleep 2
-                    done
-                    
-                    cd ..
                     echo "Running tests with APP_URL: http://localhost:5173"
                     /usr/bin/docker run --rm \
                         --network host \
                         -e APP_URL="http://localhost:5173" \
                         -e CHROME_BIN=/usr/bin/chromium \
                         ${DOCKER_IMAGE} || true
-                    
-                    echo "Stopping app..."
-                    kill $APP_PID || true
                     echo "✅ Tests execution completed"
                 '''
             }
