@@ -26,6 +26,10 @@ pipeline {
             steps {
                 echo "========== STAGE: Build Docker Image =========="
                 sh '''
+                    echo "Current directory: $(pwd)"
+                    echo "Files present:"
+                    ls -la
+                    echo "Building Docker image..."
                     docker build -t ${DOCKER_IMAGE} .
                     echo "✅ Docker image built: ${DOCKER_IMAGE}"
                 '''
