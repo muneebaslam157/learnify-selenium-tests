@@ -51,17 +51,21 @@ pipeline {
         }
 
         stage('Run Selenium Tests') {
-            steps {
-                echo "Running Selenium tests against ${APP_URL}..."
-                sh '''
-                  pip install --user -r requirements.txt || pip install -r requirements.txt
+    steps {
+        echo "Running Selenium tests against ${APP_URL}..."
+        sh '''
+          # Install dependencies with python3/pip3
+          python3 -m pip install --user -r requirements.txt || pip3 install -r requirements.txt
 
-                  export APP_URL=${APP_URL}
+          # Set APP_URL for tests
+          export APP_URL=${APP_URL}
 
-                  python -m unittest -v tests.test_learnify
-                '''
-            }
-        }
+          # Run unittest suite with python3
+          python3 -m unittest -v tests.test_learnify
+        '''
+    }
+}
+
     }
 
     post {
