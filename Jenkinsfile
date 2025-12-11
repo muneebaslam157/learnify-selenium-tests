@@ -2,17 +2,16 @@ pipeline {
     agent any
 
     environment {
-        // Repos
-        TESTS_REPO = 'https://github.com/muneebaslam157/learnify-selenium-tests.git'
-        APP_REPO   = 'https://github.com/muneebaslam157/Learnify-Skillup.git'
+        APP_REPO_URL      = 'https://github.com/muneebaslam157/Learnify-Skillup.git'
+        APP_IMAGE_NAME    = 'learnify-skillup-image'
+        APP_CONTAINER_NAME = 'learnify-skillup-app'
+        APP_PORT          = '5173'
 
-        // App URLs
-        APP_INTERNAL_URL = 'http://localhost:5173'          // used INSIDE EC2 for tests
-        APP_PUBLIC_URL   = 'http://13.233.96.170:5173'      // shown in email to sir
+        // Internal URL used by Selenium tests (inside EC2)
+        APP_URL           = "http://localhost:${APP_PORT}"
 
-        // Docker
-        APP_IMAGE   = 'learnify-skillup-image'
-        APP_CONTAINER = 'learnify-skillup-app'
+        // Public URL that sir will open from browser
+        EC2_PUBLIC_URL    = 'http://13.233.96.170:5173/'
     }
 
     stages {
@@ -28,8 +27,8 @@ pipeline {
             steps {
                 echo 'Cloning Learnify app repo...'
                 sh """
-                  rm -rf app
-                  git clone ${APP_REPO} app
+                    rm -rf app
+                    git clone ${APP_REPO_URL} app
                 """
             }
         }
@@ -38,7 +37,7 @@ pipeline {
             steps {
                 dir('app') {
                     echo 'Building Docker image for Learnify app...'
-                    sh "docker build -t ${APP_IMAGE} ."
+                    sh "docker build -t ${APP_IMAGE_NAME} ."
                 }
             }
         }
@@ -47,86 +46,64 @@ pipeline {
             steps {
                 echo 'Starting app container...'
                 sh """
-                  docker rm -f ${APP_CONTAINER} || true
-                  docker run -d --name ${APP_CONTAINER} -p 5173:5173 ${APP_IMAGE}
-                  echo 'Waiting for app to start...'
-                  sleep 25
+                    docker rm -f ${APP_CONTAINER_NAME} || true
+                    docker run -d --name ${APP_CONTAINER_NAME} -p ${APP_PORT}:${APP_PORT} ${APP_IMAGE_NAME}
+                    echo "Waiting for app to start..."
+                    sleep 25
                 """
             }
         }
 
         stage('Run Selenium Tests') {
             steps {
-                echo "Running Selenium tests against ${APP_INTERNAL_URL}..."
+                echo "Running Selenium tests against ${APP_URL}..."
                 sh """
-                  python3 -m pip install --user -r requirements.txt
-                  export APP_URL=${APP_INTERNAL_URL}
-                  python3 -m unittest -v tests.test_learnify
+                    python3 -m pip install --user -r requirements.txt
+                    export APP_URL=${APP_URL}
+                    python3 -m unittest -v tests.test_learnify
                 """
             }
         }
     }
 
     post {
+
         always {
-            echo "Cleaning up app container..."
-            sh "docker rm -f ${APP_CONTAINER} || true"
+            echo "Pipeline finished (container left running so EC2 URL is reachable)."
         }
 
         success {
             echo "All tests passed. Sending success email..."
+
             emailext(
-                subject: "Learnify CI - SUCCESS (Build #${env.BUILD_NUMBER})",
+                subject: "Learnify CI SUCCESS - Build #${env.BUILD_NUMBER}",
                 to: "muneebaslam497@gmail.com muneebaslam157@gmail.com",
                 body: """Hello Sir,
 
 The Learnify CI pipeline ran successfully on Jenkins (EC2).
 
-Tests Repository: ${env.GIT_URL}
+Tests Repository: https://github.com/muneebaslam157/learnify-selenium-tests.git
 Branch:          ${env.GIT_BRANCH}
 Build:           #${env.BUILD_NUMBER}
 Status:          SUCCESS
 
 All 10 Selenium smoke tests passed against the Dockerized Learnify app
-running on ${APP_PUBLIC_URL} (public URL of the EC2 instance).
+running on ${EC2_PUBLIC_URL}
 
 You can view the full console output here:
 ${env.BUILD_URL}console
 
+
 Regards,
 Muneeb Aslam
 FA22-BCS-077
+Automated CI Pipeline
 """
             )
         }
 
         failure {
-            echo "Some tests FAILED. Sending failure email..."
-            emailext(
-                subject: "Learnify CI - FAILED (Build #${env.BUILD_NUMBER})",
-                to: "muneebaslam497@gmail.com muneebaslam157@gmail.com",
-                body: """Hello Sir,
-
-The Learnify CI pipeline FAILED on Jenkins (EC2).
-
-Tests Repository: ${env.GIT_URL}
-Branch:          ${env.GIT_BRANCH}
-Build:           #${env.BUILD_NUMBER}
-Status:          FAILED
-
-Some Selenium tests did not pass against the Dockerized Learnify app
-running on ${APP_PUBLIC_URL} (public URL of the EC2 instance).
-
-Please review the Jenkins console logs here:
-${env.BUILD_URL}console
-
-Regards,
-Muneeb Aslam
-FA22-BCS-077
-"""
-            )
+            echo "Some tests FAILED. Email notification (if desired) can be sent here."
         }
     }
 }
-
-
