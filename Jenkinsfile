@@ -129,5 +129,3 @@ Automated CI Pipeline
         }
     }
 }
-
-
