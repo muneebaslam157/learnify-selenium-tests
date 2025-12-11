@@ -2,10 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // App URL inside EC2 / Jenkins
         APP_URL = "http://localhost:5173"
-
-        // Make sure user-level pip binaries are on PATH
+        // Ensure pip --user scripts are on PATH
         PATH = "/var/lib/jenkins/.local/bin:${env.PATH}"
     }
 
@@ -14,8 +12,6 @@ pipeline {
         stage('Checkout Tests Repo') {
             steps {
                 echo 'Checking out Selenium tests (this repo) from SCM...'
-                // Jenkins has already done the initial checkout via "Declarative: Checkout SCM",
-                // but we call checkout scm to make sure workspace is up to date.
                 checkout scm
             }
         }
@@ -35,6 +31,18 @@ pipeline {
                 echo 'Building Docker image for Learnify app...'
                 dir('app') {
                     sh '''
+                        echo "Creating .env for CI build..."
+
+                        cat > .env << 'EOF'
+VITE_APP_FIREBASE_API=AIzaSyDXqhNa1AXP3l1v7FQIbafGKGR1bNN0vdI
+VITE_APP_FIREBASE_AUTH_DOMAIN=lms-intern.firebaseapp.com
+VITE_APP_FIREBASE_PROJECT_ID=lms-intern
+VITE_APP_FIREBASE_STORAGE_BUCKET=lms-intern.appspot.com
+VITE_APP_FIREBASE_MESSAGING_SENDER_ID=233535439534
+VITE_APP_FIREBASE_APP_ID=1:233535439534:web:82413100859e0250ef233f
+VITE_APP_FIREBASE_MEASUREMENT_ID=G-4HXB67S06H
+EOF
+
                         docker build -t learnify-skillup-image .
                     '''
                 }
@@ -45,10 +53,7 @@ pipeline {
             steps {
                 echo 'Starting app container...'
                 sh '''
-                    # Remove any old container if present
                     docker rm -f learnify-skillup-app || true
-
-                    # Run new container
                     docker run -d --name learnify-skillup-app -p 5173:5173 learnify-skillup-image
 
                     echo "Waiting for app to start..."
@@ -60,12 +65,8 @@ pipeline {
         stage('Run Selenium Tests') {
             steps {
                 echo "Running Selenium tests against ${APP_URL}..."
-
                 sh '''
-                    # Install Python dependencies for Selenium tests
                     python3 -m pip install --user -r requirements.txt
-
-                    # Run tests with APP_URL exported for the test suite
                     export APP_URL="http://localhost:5173"
                     python3 -m unittest -v tests.test_learnify
                 '''
@@ -75,16 +76,13 @@ pipeline {
 
     post {
 
-        // Do NOT remove the container here, so the app stays running on port 5173
-        // and can be accessed at http://13.233.96.170:5173/ after the build.
-
         success {
             echo 'All tests passed. Sending success email...'
             emailext(
                 subject: "Learnify CI – SUCCESS (Build #${env.BUILD_NUMBER})",
                 body: """Hello Sir,
 
-The Learnify CI pipeline ran successfully on Jenkins.
+The Learnify CI pipeline ran successfully on Jenkins (EC2).
 
 Tests Repository: ${env.GIT_URL}
 Branch:           ${env.GIT_BRANCH}
@@ -128,6 +126,3 @@ Automated CI Pipeline
         }
     }
 }
-
-
-
