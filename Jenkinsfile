@@ -76,30 +76,30 @@ pipeline {
             echo "All tests passed. Sending success email..."
 
             emailext(
-                subject: "Learnify CI SUCCESS - Build #${env.BUILD_NUMBER}",
-                to: "muneebaslam497@gmail.com muneebaslam157@gmail.com",
-                body: """Hello Sir,
+    to: 'muneebaslam497@gmail.com muneebaslam157@gmail.com qasimalik@gmail.com',
+    subject: "Learnify CI Pipeline Result (#${env.BUILD_NUMBER})",
+    body: """
+Hello Sir,
 
 The Learnify CI pipeline ran successfully on Jenkins (EC2).
 
-Tests Repository: https://github.com/muneebaslam157/learnify-selenium-tests.git
-Branch:          ${env.GIT_BRANCH}
-Build:           #${env.BUILD_NUMBER}
-Status:          SUCCESS
+Tests Repository: https://github.com/muneebaslam157/learnify-selenium-tests
+Branch: ${env.GIT_BRANCH}
+Build: #${env.BUILD_NUMBER}
+Status: ${currentBuild.currentResult}
 
-All 10 Selenium smoke tests passed against the Dockerized Learnify app
-running on ${EC2_PUBLIC_URL}
+All 10 Selenium smoke tests passed against the Dockerized Learnify app 
+running on http://13.233.96.170:5173/
 
-You can view the full console output here:
+Console Output:
 ${env.BUILD_URL}console
-
 
 Regards,
 Muneeb Aslam
 FA22-BCS-077
-Automated CI Pipeline
 """
-            )
+)
+
         }
 
         failure {
