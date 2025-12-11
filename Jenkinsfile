@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         APP_URL = "http://localhost:5173"
-        // Ensure pip --user scripts are on PATH
+        // Ensure pip --user scripts are on PATH (for selenium, etc.)
         PATH = "/var/lib/jenkins/.local/bin:${env.PATH}"
     }
 
@@ -54,7 +54,10 @@ EOF
                 echo 'Starting app container...'
                 sh '''
                     docker rm -f learnify-skillup-app || true
-                    docker run -d --name learnify-skillup-app -p 5173:5173 learnify-skillup-image
+
+                    docker run -d --name learnify-skillup-app \
+                        -p 5173:5173 \
+                        learnify-skillup-image
 
                     echo "Waiting for app to start..."
                     sleep 25
@@ -98,7 +101,7 @@ ${env.BUILD_URL}console
 Regards,
 Automated CI Pipeline
 """,
-                to: "muneebaslam497@gmail.com"
+                to: "muneebaslam497@gmail.com, muneebaslam157@gmail.com"
             )
         }
 
@@ -121,7 +124,7 @@ ${env.BUILD_URL}console
 Regards,
 Automated CI Pipeline
 """,
-                to: "muneebaslam497@gmail.com"
+                to: "muneebaslam497@gmail.com, muneebaslam157@gmail.com"
             )
         }
     }
