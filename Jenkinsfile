@@ -76,7 +76,7 @@ pipeline {
             echo "All tests passed. Sending success email..."
 
             emailext(
-    to: 'muneebaslam497@gmail.com muneebaslam157@gmail.com ',
+    to: 'muneebaslam497@gmail.com muneebaslam157@gmail.com qasimalik@gmail.com',
     subject: "Learnify CI Pipeline Result (#${env.BUILD_NUMBER})",
     body: """
 Hello Sir,
